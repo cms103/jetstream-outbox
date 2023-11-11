@@ -64,6 +64,15 @@ jetstream-outbox sends NATS messages with a subject of `prefix.aggregatetype.agg
  * `aggregatetype` comes from the value inserted into the outbox table.
  * `aggregateid` comes from the value inserted into the outbox table.
 
+### Build jetstream-outbox
+To build the binary only requires a standard Go installation:
+```
+git clone https://github.com/cms103/jetstream-outbox.git
+cd jetstream-outbox
+go get ./...
+go build cmd/jetstream-outbox/jetstream-outbox.go
+```
+
 ### Running jetstream-outbox
 To start the outbox process run jetstream-outbox passing in appropriate connection details:
 ```
