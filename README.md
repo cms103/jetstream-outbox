@@ -55,7 +55,7 @@ SELECT pg_create_logical_replication_slot('jetstream_outbox', 'pgoutput');
 We now need to decide where our messages will be deposited in NATS. The simplest configuration is a new JetStream store that covers all event types:
 
 ```
-nats stream add jetstream_outbox --subjects=events.*
+nats stream add jetstream_outbox --subjects=events.>
 ```
 
 jetstream-outbox sends NATS messages with a subject of `prefix.aggregatetype.aggregateid` where:
