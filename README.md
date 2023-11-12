@@ -81,13 +81,14 @@ Usage of ./jetstream-outbox:
     	NATS credentials file location
   -db string
     	Database connection details (default "postgres://user:password@127.0.0.1/dbname?replication=database")
+  -inflight int
+    	Maximum number of outstanding JetStream acknowledgments allowed when sending a new message (default 10)
   -logging string
     	Set the minimum logging level to debug,info,warn,error (default "info")
   -nats string
     	NATS server address (default "localhost")
   -prefix string
     	The top level prefix for events published to NATS (default "events")
-
 ```
 
 ## Example
