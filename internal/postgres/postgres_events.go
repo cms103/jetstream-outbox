@@ -2,15 +2,11 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"log/slog"
 	"strconv"
 	"time"
-
-	// "github.com/jackc/pglogrepl"
-	// "github.com/jackc/pgx/pgproto3"
-	// "github.com/jackc/pgx/v5/pgconn"
-	// "github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/jackc/pglogrepl"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -24,7 +20,7 @@ type OutboxEvent struct {
 }
 type OutboxEvents chan OutboxEvent
 
-func GetEventSubscription(connString string, confirmedWAL chan pglogrepl.LSN) (OutboxEvents, error) {
+func GetEventSubscription(connString string, confirmedWAL chan pglogrepl.LSN, slotName string) (OutboxEvents, error) {
 	ourChannel := make(OutboxEvents, 1)
 
 	// Try connecting and setting up the subscription to the slot
@@ -41,7 +37,7 @@ func GetEventSubscription(connString string, confirmedWAL chan pglogrepl.LSN) (O
 	// we also need to set 'streaming' to 'true'
 	var pluginArguments = []string{
 		"proto_version '2'",
-		"publication_names 'jetstream_outbox'",
+		fmt.Sprintf("publication_names '%s'", slotName),
 		"messages 'true'",
 		"streaming 'true'",
 	}
@@ -52,8 +48,6 @@ func GetEventSubscription(connString string, confirmedWAL chan pglogrepl.LSN) (O
 		return nil, err
 	}
 	slog.Info("Startup", "SystemID", sysident.SystemID, "Timeline", strconv.Itoa(int(sysident.Timeline)), "XLogPos", sysident.XLogPos.String(), "DBName", sysident.DBName)
-
-	slotName := "jetstream_outbox"
 
 	// err = pglogrepl.StartReplication(context.Background(), conn, slotName, sysident.XLogPos, pglogrepl.StartReplicationOptions{PluginArgs: pluginArguments})
 	err = pglogrepl.StartReplication(context.Background(), conn, slotName, pglogrepl.LSN(0), pglogrepl.StartReplicationOptions{PluginArgs: pluginArguments})

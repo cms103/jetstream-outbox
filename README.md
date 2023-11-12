@@ -89,6 +89,9 @@ Usage of ./jetstream-outbox:
     	NATS server address (default "localhost")
   -prefix string
     	The top level prefix for events published to NATS (default "events")
+  -slot string
+    	Name of the PUBLICATION and Slot in Postgres to source data from (default "jetstream_outbox")
+
 ```
 
 ## Example
@@ -119,6 +122,9 @@ nats stream view
 16:42:32 Reached apparent end of data
 
 ```
+
+## Performance
+The likely performance bottleneck will come from how fast Postgres can deliver the messages to jetstream-outbox. To improve throughput try using multiple `outbox` tables and setup corresponding publication and replication slots. The name of the publication and slot can be passed to jetstream-outbox using the `-slot` pramameter.
 
 ## Notes
 A few notes:

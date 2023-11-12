@@ -5,6 +5,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"strconv"
 
 	"github.com/cms103/jetstream-outbox/internal/postgres"
 	"github.com/cms103/jetstream-outbox/internal/publisher"
@@ -23,6 +24,7 @@ func main() {
 	var dbDetails = flag.String("db", "postgres://user:password@127.0.0.1/dbname?replication=database", "Database connection details")
 	var eventPrefix = flag.String("prefix", "events", "The top level prefix for events published to NATS")
 	var maxInflight = flag.Int("inflight", 10, "Maximum number of outstanding JetStream acknowledgments allowed when sending a new message")
+	var dbSlotName = flag.String("slot", "jetstream_outbox", "Name of the PUBLICATION and Slot in Postgres to source data from")
 
 	flag.Parse()
 
@@ -42,6 +44,8 @@ func main() {
 	slog.SetDefault(slog.New(slog.NewTextHandler(io.Writer(os.Stderr), &slog.HandlerOptions{Level: loggingLevel})))
 	slog.Info("Logging level set", "level", *logLevel)
 
+	slog.Info("Startup Configuration", "nats", *natsAddress, "creds", *natsCredentials, "db", *dbDetails, "prefix", *eventPrefix, "inflight", strconv.Itoa(*maxInflight), "slot", *dbSlotName)
+
 	var nc *nats.Conn
 
 	var natsOptions []nats.Option
@@ -58,7 +62,7 @@ func main() {
 
 	ourDeliveredWALChan := make(chan pglogrepl.LSN, 1)
 
-	ourEvents, err := postgres.GetEventSubscription(*dbDetails, ourDeliveredWALChan)
+	ourEvents, err := postgres.GetEventSubscription(*dbDetails, ourDeliveredWALChan, *dbSlotName)
 	if err != nil {
 		slog.Error("No DB connection, closing", "error", err)
 		return

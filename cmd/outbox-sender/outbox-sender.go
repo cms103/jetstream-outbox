@@ -21,6 +21,7 @@ const DefaultNatsCredentials = ""
 func main() {
 	var logLevel = flag.String("logging", "info", "Set the minimum logging level to debug,info,warn,error")
 	var dbDetails = flag.String("db", "postgres://user:password@127.0.0.1/dbname?replication=database", "Database connection details")
+	var outboxName = flag.String("table", "outbox", "The name of the table being used as an outbox")
 
 	flag.Parse()
 
@@ -47,10 +48,10 @@ func main() {
 	}
 	defer conn.Close(context.Background())
 
-	sendThroughOutbox(conn)
+	sendThroughOutbox(conn, *outboxName)
 }
 
-func sendThroughOutbox(conn *pgx.Conn) {
+func sendThroughOutbox(conn *pgx.Conn, tableName string) {
 	intervalStart := time.Now()
 	startTime := intervalStart
 	reportInterval := time.Second * 5
@@ -61,6 +62,8 @@ func sendThroughOutbox(conn *pgx.Conn) {
 	payload := map[string]interface{}{"msg": "test message"}
 	intervalCount := 0
 	totalCount := 0
+
+	insertText := fmt.Sprintf("INSERT INTO %s (id, aggregatetype, aggregateid, payload) VALUES ($1, $2, $3, $4)", tableName)
 
 	for {
 		rightNow := time.Now()
@@ -86,7 +89,7 @@ func sendThroughOutbox(conn *pgx.Conn) {
 
 		id := uuid.New()
 
-		_, err = txn.Exec(ctx, "INSERT INTO outbox (id, aggregatetype, aggregateid, payload) VALUES ($1, $2, $3, $4)", id, aggType, strconv.Itoa(aggId), payload)
+		_, err = txn.Exec(ctx, insertText, id, aggType, strconv.Itoa(aggId), payload)
 		if err != nil {
 			slog.Error("Error inserting into outbox", "error", err)
 			txn.Rollback(ctx)
